@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exam Registration Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow column — step 1 exam, step 2 session, register button; the form swaps for an admission-ticket confirmation */
+:root {
+  --bg: #f3f5f9;
+  --surface: #ffffff;
+  --ink: #142033;
+  --muted: #5a6680;
+  --line: #d6dce8;
+  --accent: #2550c4;
+  --accent-ink: #ffffff;
+  --accent-soft: #e6ecfb;
+  --good: #1b7a4b;
+  --good-soft: #e3f4ea;
+  --warn: #a8361f;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1520; --surface: #172030; --ink: #e7ecf5; --muted: #9aa6bd; --line: #2b3850;
+    --accent: #7d9cf0; --accent-ink: #0f1520; --accent-soft: #1f2c48;
+    --good: #6fd3a0; --good-soft: #163428; --warn: #f09a85; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1520; --surface: #172030; --ink: #e7ecf5; --muted: #9aa6bd; --line: #2b3850;
+  --accent: #7d9cf0; --accent-ink: #0f1520; --accent-soft: #1f2c48;
+  --good: #6fd3a0; --good-soft: #163428; --warn: #f09a85; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.55;
+  padding: 40px 16px 64px; margin: 0;
+}
+.wrap { max-width: 640px; margin: 0 auto; display: grid; gap: 28px; }
+header { display: grid; gap: 6px; }
+.org { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { font-family: var(--font-display); font-size: 32px; line-height: 1.15; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0; max-width: 60ch; }
+.note { font-size: 12px; color: var(--muted); }
+
+form { display: grid; gap: 24px; }
+fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; min-width: 0; }
+legend { font-family: var(--font-display); font-weight: 600; font-size: 18px; margin-bottom: 10px; padding: 0; }
+legend .step { color: var(--accent); margin-right: 6px; }
+
+select {
+  width: 100%; font: inherit; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px;
+}
+select:focus-visible, .session input:focus-visible + .card, button:focus-visible {
+  outline: 3px solid var(--accent); outline-offset: 2px;
+}
+.exam-desc { font-size: 13px; color: var(--muted); margin: 0; }
+
+.sessions { display: grid; gap: 10px; }
+.session { position: relative; display: block; cursor: pointer; }
+.session input { position: absolute; opacity: 0; pointer-events: none; }
+.card {
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: start;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px;
+}
+.dot { grid-row: span 3; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); margin-top: 3px; }
+.session input:checked + .card { border-color: var(--accent); background: var(--accent-soft); }
+.session input:checked + .card .dot { border-color: var(--accent); background: radial-gradient(var(--accent) 45%, transparent 50%); }
+.s-date { font-weight: 600; }
+.s-meta { color: var(--muted); font-size: 14px; min-width: 0; }
+.empty { color: var(--muted); font-size: 14px; padding: 14px 16px; border: 1px dashed var(--line); border-radius: 10px; margin: 0; }
+
+.actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.btn {
+  font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: 12px 22px; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink);
+}
+.btn.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.error { color: var(--warn); font-size: 14px; margin: 0; }
+
+/* Confirmation ticket */
+.ticket { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.ticket-head { background: var(--good-soft); color: var(--good); padding: 14px 20px; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+.ticket-body { padding: 20px; display: grid; gap: 18px; }
+.ticket-body h2 { font-family: var(--font-display); font-size: 22px; margin: 0; line-height: 1.2; text-wrap: balance; }
+dl { margin: 0; display: grid; grid-template-columns: 110px 1fr; gap: 8px 16px; }
+dt { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding-top: 2px; }
+dd { margin: 0; min-width: 0; }
+.perf { border-top: 2px dashed var(--line); margin: 0 20px; }
+.ticket-foot { padding: 16px 20px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline; }
+.code { font-family: var(--font-mono); font-size: 18px; letter-spacing: .06em; }
+.code-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+@media (max-width: 420px) { dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 8px; } h1 { font-size: 26px; } }
+@media (prefers-reduced-motion: no-preference) { .ticket { animation: rise .25s ease-out; } @keyframes rise { from { transform: translateY(6px); } to { transform: none; } } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="org">Northfield State University · Testing Center</div>
+    <h1>Certification Exam Registration</h1>
+    <p class="lede">Choose an exam and a session, then select Register. All exams, sessions and locations here are fictitious sample data.</p>
+  </header>
+
+  <form id="regForm" novalidate>
+    <fieldset>
+      <legend><span class="step">1</span>Select an exam</legend>
+      <select id="exam" aria-describedby="examDesc">
+        <option value="">Choose a certification exam…</option>
+      </select>
+      <p class="exam-desc" id="examDesc"></p>
+    </fieldset>
+
+    <fieldset>
+      <legend><span class="step">2</span>Select a session</legend>
+      <div class="sessions" id="sessions" role="radiogroup" aria-label="Exam sessions">
+        <p class="empty">Choose an exam to see its sessions.</p>
+      </div>
+    </fieldset>
+
+    <div class="actions">
+      <button type="submit" class="btn" id="registerBtn">Register</button>
+      <p class="error" id="error" role="alert"></p>
+    </div>
+  </form>
+
+  <section id="confirmation" hidden aria-live="polite">
+    <div class="ticket">
+      <div class="ticket-head">✓ Registration confirmed</div>
+      <div class="ticket-body">
+        <h2 id="cExam"></h2>
+        <dl>
+          <dt>Exam code</dt><dd id="cCode"></dd>
+          <dt>Date</dt><dd id="cDate"></dd>
+          <dt>Time</dt><dd id="cTime"></dd>
+          <dt>Location</dt><dd id="cLoc"></dd>
+        </dl>
+      </div>
+      <div class="perf"></div>
+      <div class="ticket-foot">
+        <span class="code-label">Confirmation no.</span>
+        <span class="code" id="cNum"></span>
+      </div>
+    </div>
+    <div class="actions" style="margin-top:16px">
+      <button type="button" class="btn secondary" id="againBtn">Register for another exam</button>
+      <span class="note">Prototype only. Nothing is saved or emailed.</span>
+    </div>
+  </section>
+</div>
+
+<script>
+// Fictitious sample data, entered directly into the app (no database in this scope).
+const EXAMS = [
+  {
+    id: "NDA-110", name: "Network Data Associate",
+    desc: "Entry-level certification covering networking fundamentals. 90 minutes, 60 questions.",
+    sessions: [
+      { id: "NDA-110-A", date: "Monday, November 9, 2026", time: "9:00 AM – 10:30 AM", location: "Harmon Hall, Room 214" },
+      { id: "NDA-110-B", date: "Thursday, November 12, 2026", time: "1:00 PM – 2:30 PM", location: "Library Testing Lab, Room B03" }
+    ]
+  },
+  {
+    id: "CSP-200", name: "Cloud Systems Practitioner",
+    desc: "Intermediate certification covering cloud services and deployment. 120 minutes, 75 questions.",
+    sessions: [
+      { id: "CSP-200-A", date: "Tuesday, November 17, 2026", time: "10:00 AM – 12:00 PM", location: "Harmon Hall, Room 214" }
+    ]
+  }
+];
+
+const $ = id => document.getElementById(id);
+const examSel = $("exam"), sessionsBox = $("sessions"), errorEl = $("error");
+
+EXAMS.forEach(e => {
+  const o = document.createElement("option");
+  o.value = e.id; o.textContent = `${e.name} (${e.id})`;
+  examSel.appendChild(o);
+});
+
+function renderSessions() {
+  const exam = EXAMS.find(e => e.id === examSel.value);
+  $("examDesc").textContent = exam ? exam.desc : "";
+  errorEl.textContent = "";
+  if (!exam) { sessionsBox.innerHTML = '<p class="empty">Choose an exam to see its sessions.</p>'; return; }
+  sessionsBox.innerHTML = exam.sessions.map(s => `
+    <label class="session">
+      <input type="radio" name="session" id="s-${s.id}" value="${s.id}">
+      <span class="card">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="s-date">${s.date}</span>
+        <span class="s-meta">${s.time}</span>
+        <span class="s-meta">${s.location}</span>
+      </span>
+    </label>`).join("");
+}
+examSel.addEventListener("change", renderSessions);
+sessionsBox.addEventListener("change", () => { errorEl.textContent = ""; });
+
+$("regForm").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const exam = EXAMS.find(e => e.id === examSel.value);
+  const picked = document.querySelector('input[name="session"]:checked');
+  if (!exam) { errorEl.textContent = "Choose an exam first."; examSel.focus(); return; }
+  if (!picked) { errorEl.textContent = "Choose a session to continue."; return; }
+  const s = exam.sessions.find(x => x.id === picked.value);
+
+  // Confirmation is filled directly from the selected records, so it always matches.
+  $("cExam").textContent = exam.name;
+  $("cCode").textContent = exam.id;
+  $("cDate").textContent = s.date;
+  $("cTime").textContent = s.time;
+  $("cLoc").textContent = s.location;
+  $("cNum").textContent = "NSU-" + s.id.replace(/-/g, "") + "-" + Math.floor(1000 + Math.random() * 9000);
+
+  $("regForm").hidden = true;
+  $("confirmation").hidden = false;
+  $("againBtn").focus();
+});
+
+$("againBtn").addEventListener("click", () => {
+  $("regForm").reset();
+  renderSessions();
+  $("confirmation").hidden = true;
+  $("regForm").hidden = false;
+  examSel.focus();
+});
+</script>
+</body>
+</html>
