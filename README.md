@@ -6,6 +6,8 @@ I designed this system in CIT 260 at the College of Southern Nevada, starting wi
 
 > **Student portfolio project.** Not affiliated with or endorsed by the College of Southern Nevada. All people, exams and sessions in this repo are fictitious sample data.
 
+**Live prototype:** https://csn-exam-registration-prototype-jalug3ihc.vercel.app/
+
 ![Prototype registration form](docs/images/prototype-form.png)
 
 ## The problem
